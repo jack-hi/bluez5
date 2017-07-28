@@ -1,0 +1,53 @@
+#!/usr/bin/python
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+from optparse import OptionParser, make_option
+import dbus
+import dbus.mainloop.glib
+try:
+  from gi.repository import GObject
+except ImportError:
+  import gobject as GObject
+import bluezutils
+
+adapter = None
+
+def property_changed(interface, changed, invalidated, path):
+	print(interface)
+	print(changed)
+	print(path)
+	quit = False
+	if interface != "org.bluez.Adapter1":
+		return
+	if "Discoverable" in changed and not changed["Discoverable"]:
+		quit = True
+	if "Discovering" in changed and not changed["Discovering"]:
+		quit = True
+
+	if quit: 
+		adapter.StopDiscovery()
+		mainloop.quit()
+
+if __name__ == '__main__':
+	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+	bus = dbus.SystemBus()
+	
+	adapter = bluezutils.find_adapter()
+
+	# set discoverable
+	ad = dbus.Interface(bus.get_object("org.bluez", adapter.object_path), "org.freedesktop.DBus.Properties")
+	ad.Set("org.bluez.Adapter1", "DiscoverableTimeout", dbus.UInt32("60"))
+	ad.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
+	
+	bus.add_signal_receiver(property_changed,
+			dbus_interface = "org.freedesktop.DBus.Properties",
+			signal_name = "PropertiesChanged",
+			arg0 = "org.bluez.Adapter1",
+			path_keyword = "path")
+	
+	adapter.StartDiscovery()
+
+	mainloop = GObject.MainLoop()
+	mainloop.run()
