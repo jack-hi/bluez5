@@ -110,8 +110,15 @@ def properties_changed(interface, changed, invalidated, path):
 	else:
 		print_normal(address, devices[path])
 
-def property_changed(name, value):
-	if (name == "Discovering" and not value):
+# def property_changed(name, value):
+def property_changed(interface, changed, invalidated, path):
+	print(interface)
+	print(changed)
+	print(path)
+	if interface != "org.bluez.Adapter1":
+		return
+	if not changed["Discovering"]:
+	# if (name == "Discovering" and not value):
 		mainloop.quit()
 
 if __name__ == '__main__':
@@ -144,15 +151,11 @@ if __name__ == '__main__':
 			arg0 = "org.bluez.Device1",
 			path_keyword = "path")
 
-	bus.add_signal_receiver(properties_changed,
+	bus.add_signal_receiver(property_changed,
 			dbus_interface = "org.freedesktop.DBus.Properties",
 			signal_name = "PropertiesChanged",
 			arg0 = "org.bluez.Adapter1",
 			path_keyword = "path")
-
-	bus.add_signal_receiver(property_changed,
-					dbus_interface = "org.bluez.Adapter1",
-					signal_name = "PropertyChanged")
 
 	om = dbus.Interface(bus.get_object("org.bluez", "/"),
 				"org.freedesktop.DBus.ObjectManager")
