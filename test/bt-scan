@@ -85,6 +85,9 @@ def interfaces_added(path, interfaces):
 		print_normal(address, devices[path])
 
 def properties_changed(interface, changed, invalidated, path):
+	if interface == "org.bluez.Adapter1":
+		print(changed)
+		print(path)
 	if interface != "org.bluez.Device1":
 		return
 
@@ -139,6 +142,12 @@ if __name__ == '__main__':
 			dbus_interface = "org.freedesktop.DBus.Properties",
 			signal_name = "PropertiesChanged",
 			arg0 = "org.bluez.Device1",
+			path_keyword = "path")
+
+	bus.add_signal_receiver(properties_changed,
+			dbus_interface = "org.freedesktop.DBus.Properties",
+			signal_name = "PropertiesChanged",
+			arg0 = "org.bluez.Adapter1",
 			path_keyword = "path")
 
 	bus.add_signal_receiver(property_changed,
