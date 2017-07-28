@@ -14,12 +14,9 @@ import bluezutils
 adapter = None
 
 def property_changed(interface, changed, invalidated, path):
-	print(interface)
-	print(changed)
-	print(path)
-	quit = False
 	if interface != "org.bluez.Adapter1":
 		return
+	quit = False
 	if "Discoverable" in changed and not changed["Discoverable"]:
 		quit = True
 	if "Discovering" in changed and not changed["Discovering"]:
