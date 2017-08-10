@@ -11,7 +11,6 @@ except ImportError:
   import gobject as GObject
 import bluezutils
 
-compact = False
 devices = {}
 adapter = None
 
@@ -59,20 +58,7 @@ if __name__ == '__main__':
 
 	bus = dbus.SystemBus()
 
-	option_list = [
-			make_option("-i", "--device", action="store",
-					type="string", dest="dev_id"),
-			make_option("-c", "--compact",
-					action="store_true", dest="compact"),
-			]
-	parser = OptionParser(option_list=option_list)
-
-	(options, args) = parser.parse_args()
-
-	adapter = bluezutils.find_adapter(options.dev_id)
-
-	if options.compact:
-		compact = True
+	adapter = bluezutils.find_adapter()
 
 	bus.add_signal_receiver(interfaces_added,
 			dbus_interface = "org.freedesktop.DBus.ObjectManager",
