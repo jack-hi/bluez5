@@ -13,6 +13,7 @@ import bluezutils
 
 import os
 import socket
+import sys
 
 devices = {}
 adapter = None
@@ -60,7 +61,12 @@ if __name__ == '__main__':
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 	client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	client.connect("/tmp/bt.sock")
+	try:
+		client.connect("/tmp/bt.sock")
+	except socket.error:
+		client.close()
+		print("Can't connect socket")
+		sys.exit(1)	
 
 	bus = dbus.SystemBus()
 
