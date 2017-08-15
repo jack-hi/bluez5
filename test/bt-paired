@@ -1,0 +1,17 @@
+#!/usr/bin/python
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import dbus
+
+bus = dbus.SystemBus()
+
+manager = dbus.Interface(bus.get_object("org.bluez", "/"),
+					"org.freedesktop.DBus.ObjectManager")
+
+objects = manager.GetManagedObjects()
+for path, interfaces in objects.iteritems():
+	if "org.bluez.Device1" in interfaces:
+		props = interfaces["org.bluez.Device1"]
+		if props["Paired"]:
+			print(" %s %s " % (props["Address"], props["Alias"]))
