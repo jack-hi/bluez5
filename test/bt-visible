@@ -1,0 +1,31 @@
+#!/usr/bin/python
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+from optparse import OptionParser, make_option
+import dbus
+import dbus.mainloop.glib
+try:
+  from gi.repository import GObject
+except ImportError:
+  import gobject as GObject
+import bluezutils
+
+import os
+import socket
+import sys
+
+if '__main__' == __name__:
+
+	bus = dbus.SystemBus()
+	adapter = bluezutils.find_adapter()
+
+	# set discoverable
+	ad = dbus.Interface(bus.get_object("org.bluez", adapter.object_path), "org.freedesktop.DBus.Properties")
+	# powered on
+	ad.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(1))
+	# set diacoverable timeout
+	ad.Set("org.bluez.Adapter1", "DiscoverableTimeout", dbus.UInt32("180")) # 2 minute
+	# discoverable on
+	ad.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
+
