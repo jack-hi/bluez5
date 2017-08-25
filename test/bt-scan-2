@@ -43,6 +43,8 @@ def print_normal(address, properties):
 		value = properties[key]
 		if type(value) is dbus.String:
 			value = unicode(value).encode('ascii', 'replace')
+		if (key == "UUIDs"):
+			continue
 		if (key == "Class"):
 			print("    %s = 0x%06x" % (key, value))
 		else:
