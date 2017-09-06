@@ -23,8 +23,8 @@ def interfaces_added(path, interfaces):
 		if not(iface in relevant_ifaces):
 			continue
 		print("{Added %s} [%s]" % (iface, path))
-		for name, value in props.iteritems():
-			print("      %s = %s" % (name, value))
+		# for name, value in props.iteritems():
+			# print("      %s = %s" % (name, value))
 
 def interfaces_removed(path, interfaces):
 	for iface in interfaces:
