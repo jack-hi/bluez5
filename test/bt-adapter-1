@@ -64,7 +64,7 @@ if args.Discoverable is not None:
 
 if args.List:
 	print_interface = [ 'org.bluez.Adapter1', 'org.bluez.Device1']
-	print_list = [ 'Address', 'Connected', 'Name', 'Powered', 
+	print_list = [ 'Address', 'Connected', 'Alias', 'Name', 'Powered', 
 				'Discoverable', 'DiscoverableTimeout', 'Class', 
 				'Paired', 'Connected', 'Trusted', 'Icon' ]
 	mo = bluezutils.get_managed_objects()
