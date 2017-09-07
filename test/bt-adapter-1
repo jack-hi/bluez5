@@ -1,0 +1,87 @@
+#!/usr/bin/python
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import argparse
+import sys
+import time
+import dbus
+import bluezutils
+
+BLUEZ_ADAPTER = "org.bluez.Adapter1"
+
+def read_int(param):
+	try:
+		return int(param)
+	except ValueError:
+		print('must be integer, not \"%s\"' % param)
+		sys.exit(1)
+
+# parse parameters
+parser = argparse.ArgumentParser(prog="Bluetooth Adapter opts")
+parser.add_argument('-P', '--Powered', nargs='?', const='dis')
+parser.add_argument('-D', '--Discoverable', nargs='*', help="prog [on [timeout] | off]")
+parser.add_argument('-L', '--List', action='store_true')
+
+args = parser.parse_args()
+
+# print(args)
+
+bus = dbus.SystemBus()
+adapter_path = bluezutils.find_adapter().object_path
+adapter = dbus.Interface(bus.get_object("org.bluez", adapter_path), \
+					"org.freedesktop.DBus.Properties")
+
+if args.Powered:
+	if args.Powered == 'dis':
+		powered = adapter.Get(BLUEZ_ADAPTER, "Powered")
+		print(powered)
+	elif args.Powered in ['on', 'off']:
+		value = dbus.Boolean(0) if len(args.Powered) > 2 else dbus.Boolean(1)
+		adapter.Set(BLUEZ_ADAPTER, "Powered", value)
+	else:
+		raise Exception("Param Error")
+
+
+if args.Discoverable is not None:
+	if not len(args.Discoverable):
+		discoverable = adapter.Get(BLUEZ_ADAPTER, 'Discoverable')
+		print("Discoverable = %d" % discoverable)
+	elif args.Discoverable[0] == 'off':
+		value = dbus.Boolean(0) 
+		adapter.Set(BLUEZ_ADAPTER, 'Discoverable', value)
+	elif args.Discoverable[0] == 'on':
+	 	to = 180
+		if len(args.Discoverable) > 1:
+			to = read_int(args.Discoverable[1])
+			adapter.Set(BLUEZ_ADAPTER, 'DiscoverableTimeout', dbus.UInt32(to))
+		else:
+			adapter.Set(BLUEZ_ADAPTER, 'DiscoverableTimeout', dbus.UInt32(to))
+		value = dbus.Boolean(1)
+		adapter.Set(BLUEZ_ADAPTER, 'Discoverable', value)
+	else:
+		raise Exception("Param Error")
+
+if args.List:
+	print_interface = [ 'org.bluez.Adapter1', 'org.bluez.Device1']
+	print_list = [ 'Address', 'Connected', 'Name', 'Powered', 
+				'Discoverable', 'DiscoverableTimeout', 'Class', 
+				'Paired', 'Connected', 'Trusted', 'Icon' ]
+	mo = bluezutils.get_managed_objects()
+	for path in mo.keys():
+		print("[ %s ]" % path)
+		interfaces = mo[path]
+		for infc in interfaces.keys():
+			if infc not in print_interface:
+				continue
+			print("    %s " % infc)
+
+			properties = interfaces[infc]
+			for key in properties.keys():
+				if key not in print_list:
+					continue
+				print("        %s = %s" % (key, properties[key]))
+		
+
+
+
