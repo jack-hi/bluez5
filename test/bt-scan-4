@@ -30,20 +30,20 @@ if __name__ == '__main__':
 			default=180, help="Set timeout for bluetooth scan opt")
 	args = parser.parse_args()
 
-	q = Timer(args.timeout, quit_mainloop) # default 180s
-	q.start()
+	to = Timer(args.timeout, quit_mainloop) # default 180s
+	to.start()
 
 	bus = dbus.SystemBus()
 
 	adapter = bluezutils.find_adapter()
 
 	# set discoverable
-	ad = dbus.Interface(bus.get_object("org.bluez", \
-				adapter.object_path), "org.freedesktop.DBus.Properties")
+	# ad = dbus.Interface(bus.get_object("org.bluez", \
+	# 			adapter.object_path), "org.freedesktop.DBus.Properties")
 	# powered on
-	ad.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(1))
+	# ad.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(1))
 	# discoverable on
-	ad.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
+	# ad.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
 
 	adapter.StartDiscovery()
 	print("Start Discovery")
@@ -52,7 +52,8 @@ if __name__ == '__main__':
 
 	try:
 		mainloop.run()
+	# stop scan: killall -SIGINT bt-scan-4
 	except KeyboardInterrupt:
 		print("Keyboard Interrupt")
-		q.cancel()
+		to.cancel()
 		quit_mainloop()	
