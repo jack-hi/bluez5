@@ -1,0 +1,84 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import argparse
+import sys
+import dbus
+import dbus.service
+import dbus.mainloop.glib
+try:
+  from gi.repository import GObject
+except ImportError:
+  import gobject as GObject
+import bluezutils
+
+BUS_NAME = 'org.bluez'
+MEDIA_PLAYER_INTERFACE = 'org.bluez.MediaPlayer1'
+MEDIA_PLAYER_PATH = '/org/bluez/hci0/dev_54_AE_27_BF_7D_E4/player0'
+
+
+class MediaPlayer(dbus.service.Object):
+	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
+			in_signature="", out_signature="")
+	def Play(self):
+		print("Resume playback")
+
+	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
+			in_signature="", out_signature="")
+	def Pause(self):
+		print("Pause playback")
+
+
+	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
+			in_signature="", out_signature="")
+	def Stop(self):
+		print("Stop playback")
+
+	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
+			in_signature="", out_signature="")
+	def Next(self):
+		print("Next item")
+
+	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
+			in_signature="", out_signature="")
+	def Previous(self):
+		print("Previous item")
+
+	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
+			in_signature="", out_signature="")
+	def FastForward(self):
+		print("Fast forward playback")
+
+	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
+			in_signature="", out_signature="")
+	def Rewind(self):
+		print("Rewind playback")
+
+if __name__ == '__main__':
+	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+	bus = dbus.SystemBus()
+	mp = dbus.Interface(bus.get_object('org.bluez', MEDIA_PLAYER_PATH),
+			'org.bluez.MediaPlayer1')
+
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--play', action='store_true')
+	parser.add_argument('--next', action='store_true')
+
+	args = parser.parse_args()
+
+	if args.play:
+		mp.Play()
+
+	if args.next:
+		mp.Next()
+
+	
+
+	
+
+
+
