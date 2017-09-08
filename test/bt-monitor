@@ -9,26 +9,30 @@ try:
 except ImportError:
   import gobject as GObject
 
-
+import re
 import bluezutils
 
+# Environment LANG=en_GB.UTF-8
 
-relevant_ifaces = [ "org.bluez.Adapter1", "org.bluez.Device1" ]
+prop_interfaces = ['org.bluez.Adapter1', 'org.bluez.MediaPlayer1',
+					'org.bluez.Device1']
+props = ['Powered', 'Discoverable', 'Discovering', 'Status']
 
 def property_changed(interface, changed, invalidated, path):
+	if interface not in prop_interfaces:
+		return
 	print("Property_changed")
 	print(changed)
-	props = ['Powered', 'Discoverable', 'Discovering']
 	for key in changed.keys():
 		if key not in props:
 			continue
 		print("%s: %s" % (key, changed[key]))
 
 	if 'RSSI' in changed:
-		devices[path] = dict(devices[path].items() + 
-								changed.items())
-		print("RSSI: %s, %s" % (devices[path]['Address'], 
-					devices[path]['RSSI']))
+		pat = re.compile(r'/.*/hci\d/dev_(.*)')
+		m = pat.search(path)
+		add = m.group(1).replace('_', ':')
+		print("RSSI: %s, %s" % (add, changed['RSSI']))
 	
 	print(" ")
 
