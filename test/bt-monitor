@@ -21,8 +21,8 @@ props = ['Powered', 'Discoverable', 'Discovering', 'Status']
 def property_changed(interface, changed, invalidated, path):
 	if interface not in prop_interfaces:
 		return
-	print("Property_changed")
-	print(changed)
+	# print("Property_changed")
+	# print(changed)
 	for key in changed.keys():
 		if key not in props:
 			continue
@@ -34,10 +34,10 @@ def property_changed(interface, changed, invalidated, path):
 		add = m.group(1).replace('_', ':')
 		print("RSSI: %s, %s" % (add, changed['RSSI']))
 	
-	print(" ")
+	# print(" ")
 
 def interfaces_added(path, interfaces):
-	print("interfaces_added")
+	# print("interfaces_added")
 	if 'org.bluez.Device1' not in interfaces:
 		return
 	if path not in devices:
@@ -45,15 +45,17 @@ def interfaces_added(path, interfaces):
 		
 	print("NewDevice: %s, %s" % (devices[path]['Address'], 
 				devices[path]['Alias']))
-	print(" ")
+	# print(" ")
 
 def interfaces_removed(path, interfaces):
-	print("interfaces_removed")
+	# print("interfaces_removed")
+	if path not in devices:
+		return
 	address = devices[path]['Address']
 	Name = devices[path]['Alias']
 	print("DelDevice: %s, %s" % (address, Name))
 
-	print(" ")
+	# print(" ")
 
 if __name__ == '__main__':
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
