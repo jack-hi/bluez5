@@ -16,67 +16,62 @@ import bluezutils
 
 BUS_NAME = 'org.bluez'
 MEDIA_PLAYER_INTERFACE = 'org.bluez.MediaPlayer1'
-MEDIA_PLAYER_PATH = '/org/bluez/hci0/dev_54_AE_27_BF_7D_E4/player0'
 
+def find_media_player():
+	bus = dbus.SystemBus()
+	manager = dbus.Interface(bus.get_object('org.bluez', '/'),
+			'org.freedesktop.DBus.ObjectManager')
+	mo = manager.GetManagedObjects()
 
-class MediaPlayer(dbus.service.Object):
-	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
-			in_signature="", out_signature="")
-	def Play(self):
-		print("Resume playback")
-
-	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
-			in_signature="", out_signature="")
-	def Pause(self):
-		print("Pause playback")
-
-
-	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
-			in_signature="", out_signature="")
-	def Stop(self):
-		print("Stop playback")
-
-	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
-			in_signature="", out_signature="")
-	def Next(self):
-		print("Next item")
-
-	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
-			in_signature="", out_signature="")
-	def Previous(self):
-		print("Previous item")
-
-	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
-			in_signature="", out_signature="")
-	def FastForward(self):
-		print("Fast forward playback")
-
-	@dbus.service.method(MEDIA_PLAYER_INTERFACE,
-			in_signature="", out_signature="")
-	def Rewind(self):
-		print("Rewind playback")
+	for path, ifaces in mo.iteritems():
+		mp = ifaces.get(MEDIA_PLAYER_INTERFACE)
+		if mp is None:
+			continue
+		obj = bus.get_object('org.bluez', path)
+		return dbus.Interface(obj, MEDIA_PLAYER_INTERFACE)
+	raise Exception("Bluetooth MediaPlayer no found")
 
 if __name__ == '__main__':
-	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-
-	bus = dbus.SystemBus()
-	mp = dbus.Interface(bus.get_object('org.bluez', MEDIA_PLAYER_PATH),
-			'org.bluez.MediaPlayer1')
-
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--play', action='store_true')
-	parser.add_argument('--next', action='store_true')
-
+	parser.add_argument('-r', '--run', 
+			choices=['Play', 'Pause', 'Stop', 'Next', 
+				'Previous', 'FastFoward', 'Rewind'])
+	parser.add_argument('-p', '--prop', nargs='*')
 	args = parser.parse_args()
+		
+	print(args)
+	mp = find_media_player()
 
-	if args.play:
-		mp.Play()
+	if args.run is not None:
+		if args.run == 'Play':
+			mp.Play()
+		if args.run == 'Pause':
+			mp.Pause()
+		if args.run == 'Stop':
+			mp.Stop()
+		if args.run == 'Next':
+			mp.Next()
+		if args.run == 'Previous':
+			mp.Previous()
+		if args.run == 'FastFoward':
+			mp.FastFoward()
+		if args.run == 'Rewind':
+			mp.Rewind()
 
-	if args.next:
-		mp.Next()
-
-	
+	if args.prop is not None:
+		mo = bluezutils.get_managed_objects()
+		for path, ifaces in mo.iteritems():
+			if MEDIA_PLAYER_INTERFACE not in ifaces:
+				continue
+			props = ifaces[MEDIA_PLAYER_INTERFACE]
+			for key, value in props.items():
+				if key == 'Track':
+					print("    %s" % key)
+					for k, v in value.items():
+						print("        %s: %s" % (k, v))
+				else:
+					print("    %s: %s" % (key, value))
 
 	
 
