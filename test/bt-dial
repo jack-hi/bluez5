@@ -1,0 +1,25 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+#
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import argparse
+import sys
+import dbus
+
+parser = argparse.ArgumentParser()
+parser.add_argument('number')
+args = parser.parse_args()
+
+bus = dbus.SystemBus()
+manager = dbus.Interface(bus.get_object('org.ofono', '/'),
+					'org.ofono.Manager')
+modems = manager.GetModems()
+modem = modems[0][0]
+
+vcm= dbus.Interface(bus.get_object('org.ofono', modem),
+					'org.ofono.VoiceCallManager')
+path = vcm.Dial(args.number, 'default')
+print(path)
+
