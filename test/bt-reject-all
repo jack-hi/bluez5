@@ -1,0 +1,24 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+#
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import argparse
+import dbus
+import sys
+import time
+
+# hangup all call, state = incoming/active
+
+bus = dbus.SystemBus()
+manager = dbus.Interface(bus.get_object('org.ofono', '/'),
+						'org.ofono.Manager')
+modems = manager.GetModems()
+modem = modems[0][0]
+
+manager = dbus.Interface(bus.get_object('org.ofono', '/'),
+						'org.ofono.VoiceCallManager')
+manager.HangupAll()
+
+
