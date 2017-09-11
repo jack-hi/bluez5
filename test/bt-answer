@@ -1,0 +1,44 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+#
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import argparse
+import dbus
+import sys
+import time
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-r', '--reject', action='store_true')
+args = parser.parse_args()
+
+bus = dbus.SystemBus()
+manager = dbus.Interface(bus.get_object('org.ofono', '/'),
+						'org.ofono.Manager')
+modems = manager.GetModems()
+
+for path, props in modems:
+	print("[ %s ]" % path)
+
+	if 'org.ofono.VoiceCallManager' not in props['Interfaces']:
+		continue
+	
+	mgr = dbus.Interface(bus.get_object('org.ofono', path),
+						'org.ofono.VoiceCallManager')
+	calls = mgr.GetCalls()
+
+	for path, props in calls:
+		state = props['State']
+		print("[ %s ] %s" % (path, state))
+
+		if state != "incoming":
+			continue
+		call = dbus.Interface(bus.get_object('org.ofono', path),
+							'org.ofono.VoiceCall')
+
+		if not args.reject: 
+			call.Answer()
+		else:
+			call.Hangup()
+
