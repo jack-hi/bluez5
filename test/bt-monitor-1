@@ -1,0 +1,136 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+#
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+import dbus
+import dbus.mainloop.glib
+try:
+  from gi.repository import GObject
+except ImportError:
+  import gobject as GObject
+
+import re
+import bluezutils
+
+_dbus2py = {
+	dbus.String : str,
+	dbus.UInt32 : int,
+	dbus.Int32 : int,
+	dbus.Int16 : int,
+	dbus.UInt16 : int,
+	dbus.UInt64 : int,
+	dbus.Int64 : int,
+	dbus.Byte : int,
+	dbus.Boolean : bool,
+	dbus.ByteArray : str,
+	dbus.ObjectPath : str
+    }
+
+def dbus2py(d):
+	t = type(d)
+	if t in _dbus2py:
+		return _dbus2py[t](d)
+	if t is dbus.Dictionary:
+		return dict([(dbus2py(k), dbus2py(v)) for k, v in d.items()])
+	if t is dbus.Array and d.signature == "y":
+		return "".join([chr(b) for b in d])
+	if t is dbus.Array or t is list:
+		return [dbus2py(v) for v in d]
+	if t is dbus.Struct or t is tuple:
+		return tuple([dbus2py(v) for v in d])
+	return d
+
+def pretty(d):
+	d = dbus2py(d)
+	t = type(d)
+
+	if t in (dict, tuple, list) and len(d) > 0:
+		if t is dict:
+			d = ", ".join(["%s = %s" % (k, pretty(v))
+					for k, v in d.items()])
+			return "{ %s }" % d
+
+		d = " ".join([pretty(e) for e in d])
+
+		if t is tuple:
+			return "( %s )" % d
+
+	if t is str:
+		return "%s" % d
+
+	return str(d)
+
+def path2addr(path):
+	pattern = re.compile(r'/.*/hci\d/dev_(.*)')
+	match = pattern.search(path)
+	if match is None:
+		return None
+	return match.group(1).replace('_', ':')	
+
+def bluez_property_changed(interface, changed, invalidated, path):
+	info = ""
+	if 'org.bluez.Device1' == interface:
+		for prop in ['Paired', 'Connected', 'Trusted', 'RSSI']:
+			if changed.get(prop) is not None:
+				info = info + prop + '=' + pretty(changed.get(prop)) + ','
+		if len(info) > 0:
+			info = 'Address=' + path2addr(path) + ',' + info
+	elif 'org.bluez.Adapter1' == interface:
+		for prop in ['Powered', 'Discoverable', 'Discovering']:
+			if changed.get(prop) is not None:
+				info = info + prop + '=' + pretty(changed.get(prop)) + ','
+	elif 'org.bluez.MediaPlayer1' == interface:
+		for prop in ['Status']:
+			if changed.get(prop) is not None:
+				info = info + prop + '=' + pretty(changed.get(prop)) + ','
+	else:
+		pass
+
+	if len(info) > 0:
+		info = interface[interface.rfind('.')+1:] + ':' + info + '&'
+		print(info)
+
+def bluez_interface_added(path, interface):
+	if 'org.bluez.Device1' not in interface:
+		return
+	info = "NewDevice:"
+	dev = interface['org.bluez.Device1']
+	for p in ['Address', 'Alias']:
+		if dev.get(p) is None:
+			continue
+		if type(dev[p]) is dbus.String:
+			p = unicode(p).encode('ascii', 'replace')
+		info = info + p + '=' + dev[p] + ','
+	info = info + '&'
+	print(info)
+
+def bluez_interface_removed(path, interface):
+	if 'org.bluez.Device1' not in interface:
+		return
+	addr = path2addr(path)
+	info = 'DelDevice:Address=' + addr +',&'
+	print(info)
+
+if __name__ == '__main__':
+	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+	bus = dbus.SystemBus()
+
+	bus.add_signal_receiver(bluez_property_changed, bus_name="org.bluez",
+			dbus_interface="org.freedesktop.DBus.Properties",
+			signal_name="PropertiesChanged",
+			path_keyword="path")
+
+	bus.add_signal_receiver(bluez_interface_added, bus_name="org.bluez",
+			dbus_interface="org.freedesktop.DBus.ObjectManager",
+			signal_name="InterfacesAdded")
+
+	bus.add_signal_receiver(bluez_interface_removed, bus_name="org.bluez",
+			dbus_interface="org.freedesktop.DBus.ObjectManager",
+			signal_name="InterfacesRemoved")
+
+
+	mainloop = GObject.MainLoop()
+	mainloop.run()
