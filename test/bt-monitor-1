@@ -113,23 +113,44 @@ def bluez_interface_removed(path, interface):
 	info = 'DelDevice:Address=' + addr +',&'
 	print(info)
 
+def call_added(name, value):
+	state = value['State']
+	number = value['LineIdentification']
+	print("VoiceCall:State=%s,Number=%s,&" % (state, number))
+
+def call_states(name, value):
+	if name in ['State']:
+		print("VoiceCall:State=%s,&" % value)
+
 if __name__ == '__main__':
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 	bus = dbus.SystemBus()
 
-	bus.add_signal_receiver(bluez_property_changed, bus_name="org.bluez",
+	bus.add_signal_receiver(bluez_property_changed, 
+			bus_name="org.bluez",
 			dbus_interface="org.freedesktop.DBus.Properties",
 			signal_name="PropertiesChanged",
 			path_keyword="path")
 
-	bus.add_signal_receiver(bluez_interface_added, bus_name="org.bluez",
+	bus.add_signal_receiver(bluez_interface_added, 
+			bus_name="org.bluez",
 			dbus_interface="org.freedesktop.DBus.ObjectManager",
 			signal_name="InterfacesAdded")
 
-	bus.add_signal_receiver(bluez_interface_removed, bus_name="org.bluez",
+	bus.add_signal_receiver(bluez_interface_removed, 
+			bus_name="org.bluez",
 			dbus_interface="org.freedesktop.DBus.ObjectManager",
 			signal_name="InterfacesRemoved")
+
+	bus.add_signal_receiver(call_added,
+			bus_name="org.ofono",
+			signal_name="CallAdded")
+
+	bus.add_signal_receiver(call_states,
+			bus_name="org.ofono",
+			signal_name="PropertyChanged")
+
 
 
 	mainloop = GObject.MainLoop()
