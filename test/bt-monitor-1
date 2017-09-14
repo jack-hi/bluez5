@@ -11,6 +11,9 @@ try:
 except ImportError:
   import gobject as GObject
 
+import sys
+import os 
+import socket
 import re
 import bluezutils
 
@@ -62,6 +65,9 @@ def pretty(d):
 
 	return str(d)
 
+def print_info(info):
+	client.send(info)
+
 def path2addr(path):
 	pattern = re.compile(r'/.*/hci\d/dev_(.*)')
 	match = pattern.search(path)
@@ -90,7 +96,7 @@ def bluez_property_changed(interface, changed, invalidated, path):
 
 	if len(info) > 0:
 		info = interface[interface.rfind('.')+1:] + ':' + info + '&'
-		print(info)
+		print_info(info) # print(info)
 
 def bluez_interface_added(path, interface):
 	if 'org.bluez.Device1' not in interface:
@@ -104,26 +110,36 @@ def bluez_interface_added(path, interface):
 			p = unicode(p).encode('ascii', 'replace')
 		info = info + p + '=' + dev[p] + ','
 	info = info + '&'
-	print(info)
+	print_info(info) # print(info)
 
 def bluez_interface_removed(path, interface):
 	if 'org.bluez.Device1' not in interface:
 		return
 	addr = path2addr(path)
 	info = 'DelDevice:Address=' + addr +',&'
-	print(info)
+	print_info(info) # print(info)
 
 def call_added(name, value):
 	state = value['State']
 	number = value['LineIdentification']
-	print("VoiceCall:State=%s,Number=%s,&" % (state, number))
+	# print("VoiceCall:State=%s,Number=%s,&" % (state, number))
+	print_info("VoiceCall:State=%s,Number=%s,&" % (state, number))
 
 def call_states(name, value):
 	if name in ['State']:
-		print("VoiceCall:State=%s,&" % value)
+		# print("VoiceCall:State=%s,&" % value)
+		print_info("VoiceCall:State=%s,&" % value)
 
 if __name__ == '__main__':
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+	client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	try:
+		client.connect("/tmp/bt.sock")
+	except socket.error:
+		client.close()
+		print("Can't connect socket")
+		sys.exit(1)	
 
 	bus = dbus.SystemBus()
 
