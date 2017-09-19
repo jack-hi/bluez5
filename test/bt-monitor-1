@@ -82,7 +82,13 @@ def bluez_property_changed(interface, changed, invalidated, path):
 			if changed.get(prop) is not None:
 				info = info + prop + '=' + pretty(changed.get(prop)) + ','
 		if len(info) > 0:
-			info = 'Address=' + path2addr(path) + ',' + info
+			addr = path2addr(path)
+		  	dev_path = bluezutils.find_device(addr).object_path
+			props = dbus.Interface(bus.get_object('org.bluez', dev_path),
+				'org.freedesktop.DBus.Properties')
+			alias = props.Get('org.bluez.Device1', 'Alias')	
+		  	name = unicode(alias).encode('ascii', 'replace')
+			info = 'Address=' + addr + ',' + 'Alias=' + name + ',' + info
 	elif 'org.bluez.Adapter1' == interface:
 		for prop in ['Powered', 'Discoverable', 'Discovering']:
 			if changed.get(prop) is not None:
