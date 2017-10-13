@@ -17,7 +17,7 @@ manager = dbus.Interface(bus.get_object('org.ofono', '/'),
 modems = manager.GetModems()
 modem = modems[0][0]
 
-manager = dbus.Interface(bus.get_object('org.ofono', '/'),
+manager = dbus.Interface(bus.get_object('org.ofono', modem),
 						'org.ofono.VoiceCallManager')
 manager.HangupAll()
 
