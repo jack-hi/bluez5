@@ -19,6 +19,7 @@ import threading
 import bluezutils
 import dbus.service
 import bluezagent
+import logging
 
 # UnicodeDecodeError
 reload(sys)
@@ -78,11 +79,11 @@ def print_info(info):
 		try:
 			client.send(info)
 		except socket.error, e:
-			print('Exception: %s' % e)
+			logging.warning('Exception: %s' % e)
 			client.close()
 			client = None
 	else:
-		print(info)
+		logging.info(info)
 
 def bluez_property_changed(interface, changed, invalidated, path):
 	info = ""
@@ -156,6 +157,11 @@ def dump_server():
 
 if __name__ == '__main__':
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+	# set logging 
+	logging.basicConfig(format = '%(asctime)s: %(message)s', 
+						filename = '/tmp/bt-monitor.log',
+						level = logging.INFO)
 
 	# create dump server thread
 	client = None
