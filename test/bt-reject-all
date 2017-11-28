@@ -15,10 +15,14 @@ bus = dbus.SystemBus()
 manager = dbus.Interface(bus.get_object('org.ofono', '/'),
 						'org.ofono.Manager')
 modems = manager.GetModems()
-modem = modems[0][0]
 
-manager = dbus.Interface(bus.get_object('org.ofono', modem),
+for path, props in modems:
+	if 'org.ofono.VoiceCallManager' not in props['Interfaces']:
+		continue
+
+	m = dbus.Interface(bus.get_object('org.ofono', path),
 						'org.ofono.VoiceCallManager')
-manager.HangupAll()
+	m.HangupAll()
+	break
 
 

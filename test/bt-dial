@@ -16,10 +16,15 @@ bus = dbus.SystemBus()
 manager = dbus.Interface(bus.get_object('org.ofono', '/'),
 					'org.ofono.Manager')
 modems = manager.GetModems()
-modem = modems[0][0]
 
-vcm= dbus.Interface(bus.get_object('org.ofono', modem),
+for path, props in modems:
+	# print("[ %s ]" % path)
+	if 'org.ofono.VoiceCallManager' not in props['Interfaces']:
+		continue
+
+	vcm= dbus.Interface(bus.get_object('org.ofono', path),
 					'org.ofono.VoiceCallManager')
-path = vcm.Dial(args.number, 'default')
-print(path)
+	path = vcm.Dial(args.number, 'default')
+	print(path)
+	break
 
