@@ -91,6 +91,7 @@ def bluez_property_changed(interface, changed, invalidated, path):
 			if changed.get(prop) is not None:
 				info = info + prop + '=' + pretty(changed[prop]) + ','
 		if len(info) > 0:
+		  	print(devices)
 			addr = devices[path]['Address']
 			name = devices[path]['Alias']
 			info = 'Address=' + addr + ',' + 'Alias=' + name + ',' + info
@@ -106,6 +107,10 @@ def bluez_property_changed(interface, changed, invalidated, path):
 		for prop in ['Connected']:
 			if changed.get(prop) is not None:
 				info = info + "MediaConnected" + '=' + pretty(changed.get(prop)) + ','
+	elif 'org.bluez.MediaTransport1' == interface:
+		for prop in ['Volume']:
+			if changed.get(prop) is not None:
+				info = info + prop + '=' + pretty(changed[prop]) + ','
 	else:
 		pass
 
@@ -126,6 +131,7 @@ def bluez_interface_added(path, interface):
 			info = info + p + '=' + dev[p] + ','
 	if 'org.bluez.Adapter1' in interface:
 		info = "Adapter:Adapter=Ready,"
+		adapter_ready = 1
 
 		# get managed devices 	
 		om = dbus.Interface(bus.get_object('org.bluez', '/'),
@@ -170,7 +176,12 @@ def dump_server():
 		(cli, addr) = server.accept()
 		if client:
 			client.close()
-		client = cli
+		client = cli 
+		if adapter_ready:
+			print_info("Adapter:Adapter=Ready,&")
+		else:
+			print_info("Adapter:Adapter=NotReady,&")
+	
 
 if __name__ == '__main__':
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
@@ -187,6 +198,7 @@ if __name__ == '__main__':
 	bus = dbus.SystemBus()
 	# managed devices
 	devices = {}
+	adapter_ready = 0
 	'''
 	om = dbus.Interface(bus.get_object('org.bluez', '/'),
 			'org.freedesktop.DBus.ObjectManager')
