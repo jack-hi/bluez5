@@ -82,8 +82,7 @@ def print_info(info):
 			logging.warning('Exception: %s' % e)
 			client.close()
 			client = None
-	else:
-		logging.info(info)
+	logging.info(info)
 
 def bluez_property_changed(interface, changed, invalidated, path):
 	info = ""
@@ -103,6 +102,10 @@ def bluez_property_changed(interface, changed, invalidated, path):
 		for prop in ['Status']:
 			if changed.get(prop) is not None:
 				info = info + prop + '=' + pretty(changed.get(prop)) + ','
+	elif 'org.bluez.MediaControl1' == interface:
+		for prop in ['Connected']:
+			if changed.get(prop) is not None:
+				info = info + "MediaConnected" + '=' + pretty(changed.get(prop)) + ','
 	else:
 		pass
 
@@ -111,18 +114,32 @@ def bluez_property_changed(interface, changed, invalidated, path):
 		print_info(info) # print(info)
 
 def bluez_interface_added(path, interface):
-	if 'org.bluez.Device1' not in interface:
-		return
-	info = "NewDevice:"
-	devices[path] = dev = interface['org.bluez.Device1']
-	for p in ['Address', 'Alias']:
-		if dev.get(p) is None:
-			continue
-		if type(dev[p]) is dbus.String:
-			p = unicode(p).encode('ascii', 'replace')
-		info = info + p + '=' + dev[p] + ','
-	info = info + '&'
-	print_info(info) # print(info)
+	info = ""
+	if 'org.bluez.Device1' in interface:
+		info = "NewDevice:"
+		devices[path] = dev = interface['org.bluez.Device1']
+		for p in ['Address', 'Alias']:
+			if dev.get(p) is None:
+				continue
+			if type(dev[p]) is dbus.String:
+				p = unicode(p).encode('ascii', 'replace')
+			info = info + p + '=' + dev[p] + ','
+	if 'org.bluez.Adapter1' in interface:
+		info = "Adapter:Adapter=Ready,"
+
+		# get managed devices 	
+		om = dbus.Interface(bus.get_object('org.bluez', '/'),
+				'org.freedesktop.DBus.ObjectManager')
+		objects = om.GetManagedObjects()
+		for path, ifaces in objects.iteritems():
+			if 'org.bluez.Device1' in ifaces:
+				devices[path] = ifaces['org.bluez.Device1']
+		# register default agent 
+		bluezagent.StartDefaultAgent(bus, '/bt/default/agent')
+
+	if len(info) > 0:
+		info = info + '&'
+		print_info(info) # print(info)
 
 def bluez_interface_removed(path, interface):
 	if 'org.bluez.Device1' not in interface:
@@ -152,7 +169,7 @@ def dump_server():
 	while 1: 
 		(cli, addr) = server.accept()
 		if client:
-			cli.close()
+			client.close()
 		client = cli
 
 if __name__ == '__main__':
@@ -170,13 +187,14 @@ if __name__ == '__main__':
 	bus = dbus.SystemBus()
 	# managed devices
 	devices = {}
+	'''
 	om = dbus.Interface(bus.get_object('org.bluez', '/'),
 			'org.freedesktop.DBus.ObjectManager')
 	objects = om.GetManagedObjects()
 	for path, ifaces in objects.iteritems():
 		if 'org.bluez.Device1' in ifaces:
 			devices[path] = ifaces['org.bluez.Device1']
-
+	'''
 	bus.add_signal_receiver(bluez_property_changed, 
 			bus_name="org.bluez",
 			dbus_interface="org.freedesktop.DBus.Properties",
@@ -200,9 +218,6 @@ if __name__ == '__main__':
 	bus.add_signal_receiver(call_states,
 			bus_name="org.ofono",
 			signal_name="PropertyChanged")
-
-	# register default agent 
-	bluezagent.StartDefaultAgent(bus, '/bt/default/agent')
 
 	mainloop = GObject.MainLoop()
 	mainloop.run()
