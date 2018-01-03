@@ -14,8 +14,6 @@ except ImportError:
 import sys
 import os 
 import socket
-import time
-import threading
 import bluezutils
 import dbus.service
 import bluezagent
@@ -82,6 +80,7 @@ def print_info(info):
 			logging.warning('Exception: %s' % e)
 			client.close()
 			client = None
+			mainloop.quit()
 	logging.info(info)
 
 def do_adapter_ready():
@@ -171,29 +170,12 @@ def call_states(name, value):
 	if name in ['State']:
 		print_info("VoiceCall:State=%s,&" % value)
 
-def dump_server():
-	global client
-	server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	sock_file = '/tmp/bt-server.sock'
-	if os.path.exists(sock_file):
-		os.remove(sock_file)
-	server.bind(sock_file)	
-	server.listen(5)
-	while 1: 
-		(cli, addr) = server.accept()
-		if client:
-			client.close()
-		client = cli 
-		if adapter_ready:
-			print_info("Adapter:Adapter=Ready,&")
-		else:
-			print_info("Adapter:Adapter=NotReady,&")
-
 # global vars
 bus = None
 devices = {}
 adapter_ready = False
 client = None
+mainloop = None
 
 if __name__ == '__main__':
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
@@ -202,9 +184,18 @@ if __name__ == '__main__':
 	logging.basicConfig(format = '%(asctime)s: %(message)s', 
 						filename = '/tmp/bt-monitor.log',
 						level = logging.INFO)
+	logging.info("bt-monitor started")
 
-	# create dump server thread
-	threading.Thread(target=dump_server).start()
+	server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	sock_file = '/tmp/bt-server.sock'
+	if os.path.exists(sock_file):
+		os.remove(sock_file)
+	server.bind(sock_file)	
+	server.listen(5)
+	(client, addr) = server.accept()
+	if client:
+		logging.info("Client connected")
+	print_info("Adapter:Adapter=NotReady,&")
 
 	bus = dbus.SystemBus()
 	bus.add_signal_receiver(bluez_property_changed, 
